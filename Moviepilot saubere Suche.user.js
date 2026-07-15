@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Moviepilot saubere Suche
 // @namespace    http://tampermonkey.net/
-// @version      0.0.1
+// @version      0.0.2
 // @description  Entfernt den "Anzeige"-Eintrag aus der Filmsuche auf moviepilot.de
 // @author       Alsweider
 // @match        https://www.moviepilot.de/*
@@ -13,10 +13,19 @@
     'use strict';
 
     function removeAnzeige() {
-        document.querySelectorAll('div.sc-76af267a-6').forEach(el => {
-            if (el.textContent.trim() === "Anzeige") {
-                const entry = el.closest('a.sc-76af267a-0');
-                if (entry) entry.remove();
+        // Auf den Suchbereich neben dem Suchformular beschränken (id="navSearch"
+        // ist als Funktionsanker deutlich beständiger als die von styled-components
+        // vergebenen "sc-…"-Klassen, die sich bei jedem Deployment ändern können)
+        const suchfeld = document.getElementById('navSearch');
+        const bereich = suchfeld ? suchfeld.parentElement : document.body;
+        if (!bereich) return;
+
+        bereich.querySelectorAll('div').forEach(el => {
+            // Nur Blattelemente (ohne Kindknoten) mit exaktem Text "Anzeige" zählen als Treffer,
+            // damit übergeordnete Container nicht versehentlich erfasst werden
+            if (el.children.length === 0 && el.textContent.trim() === "Anzeige") {
+                const eintrag = el.closest('a[href]');
+                if (eintrag) eintrag.remove();
             }
         });
     }
